@@ -18,6 +18,9 @@ export const WorklogItemSchema = z.object({
 export const WorkloadTaskSchema = z.object({
   key: z.string(),
   createdAt: z.string(),
+  deadline: z.string().nullable(),
+  resolvedAt: z.string().nullable(),
+  deltaTime: z.number().nullable(),
   summary: z.string(),
   description: z.string().optional(),
   worklogs: z.array(WorklogItemSchema).optional(),
@@ -43,7 +46,11 @@ export const WorkloadSchema = z.object({
 export const WorkloadQuerySchema = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
-  queue: z.string().optional().default("Prisma").describe("Queue to filter tasks"),
+  queue: z
+    .string()
+    .optional()
+    .default("Prisma")
+    .describe("Queue to filter tasks"),
 });
 
 export type IWorkloadItem = z.infer<typeof WorkloadItemSchema>;

@@ -1,5 +1,5 @@
-import { computed, type Ref } from 'vue';
-import type { IWorkloadTask, IWorkloadItem } from '../schemas/workloadSchema';
+import { computed, type Ref } from "vue";
+import type { IWorkloadTask, IWorkloadItem } from "../schemas/workloadSchema";
 
 // Расширяем IWorkloadTask для вложенности
 export interface WorkloadTaskWithChildren extends IWorkloadTask {
@@ -22,12 +22,18 @@ export function useWorkloadTable(
   projects: Ref<IWorkloadItem[]>
 ) {
   // Построение иерархии задач с проектами на верхнем уровне
-  function buildHierarchyWithProjects(taskList: IWorkloadTask[], projectList: IWorkloadItem[]): TableRowItem[] {
-    console.log('🔧 buildHierarchyWithProjects called with:', { taskList, projectList });
-    
+  function buildHierarchyWithProjects(
+    taskList: IWorkloadTask[],
+    projectList: IWorkloadItem[]
+  ): TableRowItem[] {
+    console.log("🔧 buildHierarchyWithProjects called with:", {
+      taskList,
+      projectList,
+    });
+
     const taskMap = new Map<string, WorkloadTaskWithChildren>();
     const projectTasksMap = new Map<string, WorkloadTaskWithChildren[]>();
-    
+
     // Создаем карту всех задач
     taskList.forEach((task) => {
       const taskWithChildren: WorkloadTaskWithChildren = {
@@ -37,49 +43,52 @@ export function useWorkloadTable(
         isExpanded: true,
       };
       taskMap.set(task.key, taskWithChildren);
-      
+
       // Группируем задачи по проектам
-      const projectId = task.projectId || 'no-project';
+      const projectId = task.projectId || "no-project";
       if (!projectTasksMap.has(projectId)) {
         projectTasksMap.set(projectId, []);
       }
       projectTasksMap.get(projectId)!.push(taskWithChildren);
     });
-    
+
     // Строим иерархию внутри каждого проекта
     taskMap.forEach((task) => {
       if (task.parentKey && taskMap.has(task.parentKey)) {
         const parent = taskMap.get(task.parentKey)!;
         parent.children!.push(task);
         task.level = (parent.level || 1) + 1;
-        
+
         // Удаляем дочернюю задачу из корневого списка проекта
-        const projectId = task.projectId || 'no-project';
+        const projectId = task.projectId || "no-project";
         const projectTasks = projectTasksMap.get(projectId) || [];
-        const index = projectTasks.findIndex(t => t.key === task.key);
+        const index = projectTasks.findIndex((t) => t.key === task.key);
         if (index > -1) {
           projectTasks.splice(index, 1);
         }
       }
     });
-    
+
     // Создаем структуру с проектами
     const result: TableRowItem[] = [];
-    
+
     projectList.forEach((project) => {
       const projectTasks = projectTasksMap.get(project.key) || [];
-      
+
       if (projectTasks.length > 0) {
         // Создаем проект как корневой элемент
         const projectWithTasks: ProjectWithTasks = {
           key: project.key,
           display: project.display,
+          deadline: null,
+          resolvedAt: null,
+          deltaTime: null,
           summary: project.display,
           createdAt: new Date().toISOString(),
           hoursSpent: null,
           amount: null,
-          statusKey: '',
-          typeKey: 'project',
+          statusKey: "",
+          typeKey: "project",
           assigneeId: null,
           projectId: null,
           sprintKey: null,
@@ -89,23 +98,26 @@ export function useWorkloadTable(
           isExpanded: true,
           isProject: true,
         };
-        
+
         result.push(projectWithTasks);
       }
     });
-    
+
     // Добавляем задачи без проекта (если есть)
-    const orphanTasks = projectTasksMap.get('no-project') || [];
+    const orphanTasks = projectTasksMap.get("no-project") || [];
     if (orphanTasks.length > 0) {
       const noProjectGroup: ProjectWithTasks = {
-        key: 'no-project',
-        display: 'Без проекта',
-        summary: 'Задачи без проекта',
+        key: "no-project",
+        display: "Без проекта",
+        summary: "Задачи без проекта",
         createdAt: new Date().toISOString(),
+        deadline: null,
+        resolvedAt: null,
+        deltaTime: null,
         hoursSpent: null,
         amount: null,
-        statusKey: '',
-        typeKey: 'project',
+        statusKey: "",
+        typeKey: "project",
         assigneeId: null,
         projectId: null,
         sprintKey: null,
@@ -115,24 +127,24 @@ export function useWorkloadTable(
         isExpanded: true,
         isProject: true,
       };
-      
+
       result.push(noProjectGroup);
     }
-    
+
     return result;
   }
 
   // Функция для развертывания иерархии в плоский список для таблицы
   function flattenHierarchy(items: TableRowItem[]): TableRowItem[] {
     const result: TableRowItem[] = [];
-    
+
     function addItem(item: TableRowItem) {
       result.push(item);
       if (item.isExpanded && item.children) {
         item.children.forEach(addItem);
       }
     }
-    
+
     items.forEach(addItem);
     return result;
   }
@@ -162,34 +174,34 @@ export function useWorkloadTable(
   // Проверка наличия ворклогов у задачи или у любой дочерней задачи
   function hasWorklogsInTree(item: TableRowItem): boolean {
     // Проекты не имеют собственных ворклогов
-    if ('isProject' in item && item.isProject) {
+    if ("isProject" in item && item.isProject) {
       // Проверяем дочерние задачи
       if (item.children && item.children.length > 0) {
         return item.children.some((child) => hasWorklogsInTree(child));
       }
       return false;
     }
-    
+
     // Для обычных задач проверяем саму задачу
     if (item.worklogs && item.worklogs.length > 0) {
       return true;
     }
-    
+
     // Проверяем дочерние задачи
     if (item.children && item.children.length > 0) {
       return item.children.some((child) => hasWorklogsInTree(child));
     }
-    
+
     return false;
   }
 
   // Форматирование часов
   function formatHours(hours: number | null): string {
     if (!hours) return "—";
-    
+
     // Округляем до 1 знака после запятой
     const roundedHours = Math.round(hours * 10) / 10;
-    
+
     const lastDigit = Math.floor(roundedHours) % 10;
     const lastTwoDigits = Math.floor(roundedHours) % 100;
 
@@ -217,15 +229,15 @@ export function useWorkloadTable(
 
   // Основная функция для получения иерархии
   const hierarchyTasks = computed(() => {
-    console.log('🏗️ useWorkloadTable buildHierarchyWithProjects:', {
+    console.log("🏗️ useWorkloadTable buildHierarchyWithProjects:", {
       tasksLength: tasks.value.length,
       projectsLength: projects.value.length,
       tasksData: tasks.value,
-      projectsData: projects.value
+      projectsData: projects.value,
     });
-    
+
     const result = buildHierarchyWithProjects(tasks.value, projects.value);
-    console.log('📋 hierarchyTasks result:', result);
+    console.log("📋 hierarchyTasks result:", result);
     return result;
   });
 

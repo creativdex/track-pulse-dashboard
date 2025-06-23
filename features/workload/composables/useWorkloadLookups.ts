@@ -1,5 +1,5 @@
-import { computed, type Ref } from 'vue';
-import type { IWorkloadItem } from '../schemas/workloadSchema';
+import { computed, type Ref } from "vue";
+import type { IWorkloadItem } from "../schemas/workloadSchema";
 
 export function useWorkloadLookups(
   statuses: Ref<IWorkloadItem[]>,
@@ -25,7 +25,7 @@ export function useWorkloadLookups(
   }
 
   function getAssigneeDisplay(assigneeId: string | null): string {
-    if (!assigneeId) return '—';
+    if (!assigneeId) return "—";
     return assigneeMap.value[assigneeId] || assigneeId;
   }
 
@@ -34,43 +34,61 @@ export function useWorkloadLookups(
   }
 
   // Функции для получения цветов бейджей
-  function getStatusColor(statusKey: string): "neutral" | "primary" | "secondary" | "success" | "info" | "warning" | "error" {
+  function getStatusColor(
+    statusKey: string
+  ):
+    | "neutral"
+    | "primary"
+    | "secondary"
+    | "success"
+    | "info"
+    | "warning"
+    | "error" {
     switch (statusKey.toLowerCase()) {
-      case 'open':
-      case 'new':
-        return 'neutral';
-      case 'in_progress':
-      case 'reopened':
-        return 'info';
-      case 'resolved':
-      case 'closed':
-      case 'done':
-        return 'success';
-      case 'blocked':
-      case 'rejected':
-        return 'error';
+      case "open":
+      case "new":
+        return "neutral";
+      case "in_progress":
+      case "reopened":
+        return "info";
+      case "resolved":
+      case "closed":
+      case "done":
+        return "success";
+      case "blocked":
+      case "rejected":
+        return "error";
       default:
-        return 'neutral';
+        return "neutral";
     }
   }
 
-  function getTypeColor(typeKey: string): "neutral" | "primary" | "secondary" | "success" | "info" | "warning" | "error" {
+  function getTypeColor(
+    typeKey: string
+  ):
+    | "neutral"
+    | "primary"
+    | "secondary"
+    | "success"
+    | "info"
+    | "warning"
+    | "error" {
     switch (typeKey.toLowerCase()) {
-      case 'epic':
-        return 'secondary';
-      case 'story':
-      case 'feature':
-        return 'info';
-      case 'task':
-        return 'success';
-      case 'bug':
-        return 'error';
-      case 'subtask':
-        return 'warning';
-      case 'project':
-        return 'primary';
+      case "epic":
+        return "secondary";
+      case "story":
+      case "feature":
+        return "info";
+      case "task":
+        return "success";
+      case "bug":
+        return "error";
+      case "subtask":
+        return "warning";
+      case "project":
+        return "primary";
       default:
-        return 'neutral';
+        return "neutral";
     }
   }
 
