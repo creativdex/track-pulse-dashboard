@@ -49,7 +49,6 @@ export const WorkloadQuerySchema = z.object({
   queue: z
     .string()
     .optional()
-    .default("Prisma")
     .describe("Queue to filter tasks"),
 });
 
