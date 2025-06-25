@@ -26,7 +26,6 @@ const handleLoadData = async (dateRange: { from: string | null; to: string | nul
     const data = await fetchWorkloadData({
       from: dateRange.from || undefined,
       to: dateRange.to || undefined,
-      queue: 'Prisma' // можно сделать настраиваемым
     });
     
     workloadData.value = data;
