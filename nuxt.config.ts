@@ -29,6 +29,7 @@ export default defineNuxtConfig({
         process.env.ENV__DEV_MODE === "true"
           ? process.env.ENV__API_BASE_URL
           : "/api",
+      workHoursPerMonth: Number(process.env.ENV__WORK_HOURS_PER_MONTH) || 160,
     },
   },
 });

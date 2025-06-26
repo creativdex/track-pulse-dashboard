@@ -251,6 +251,7 @@ import { onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useEmployeeStore } from "../stores/useEmployeeStore";
 import type { IEmployeeWithChanges } from "../schemas/employeeSchema";
+import { useRuntimeConfig } from '#app';
 
 // ===== STORE SETUP =====
 const store = useEmployeeStore();
@@ -277,9 +278,11 @@ const {
 
 // ===== HANDLERS =====
 
+const config = useRuntimeConfig();
+const hoursPerMonth = config.public.workHoursPerMonth;
+
 // Функция для расчёта ставки из оклада
 function calculateRateFromSalary(salary: number): number {
-  const hoursPerMonth = 168;
   return Math.round(salary / hoursPerMonth);
 }
 
@@ -312,7 +315,7 @@ function startEditingWithSalaryInput(id: string) {
   originalStartEditing(id);
   const emp = employees.value.find(e => e.id === id);
   if (emp && emp.newSalaryInput === undefined) {
-    emp.newSalaryInput = emp.newRate ? Math.round((emp.newRate || 0) * 168) : 0;
+    emp.newSalaryInput = emp.newRate ? Math.round((emp.newRate || 0) * hoursPerMonth) : 0;
   }
 }
 
@@ -437,7 +440,7 @@ onMounted(async () => {
     await loadEmployees();
     // Инициализация временного поля для оклада
     employees.value.forEach(emp => {
-      emp.newSalaryInput = emp.newRate ? Math.round((emp.newRate || 0) * 168) : 0;
+      emp.newSalaryInput = emp.newRate ? Math.round((emp.newRate || 0) * hoursPerMonth) : 0;
     });
   } catch (err) {
     console.error('Ошибка при инициализации:', err);
