@@ -129,20 +129,17 @@
               class="flex items-center space-x-2"
             >
               <UInput
-                v-model.number="row.original.newRate"
+                v-model.number="row.original.newSalaryInput"
                 type="number"
                 :min="0"
-                :step="100"
-                placeholder="Введите ставку"
+                :step="1000"
+                placeholder="Введите оклад"
                 size="sm"
                 :class="row.original.hasChanges ? 'ring-2 ring-orange-500' : ''"
-                @input="
-                  updateEmployeeRate(row.original.id, row.original.newRate || 0)
-                "
-                @keyup.enter="applyChange(row.original.id)"
+                @keyup.enter="applySalary(row.original)"
                 @keyup.escape="cancelEditing(row.original.id)"
               />
-              <span class="text-sm text-gray-500 whitespace-nowrap">₽/час</span>
+              <span class="text-sm text-gray-500 whitespace-nowrap">₽/мес</span>
             </div>
             <div
               v-else-if="row.original.hasChanges"
@@ -191,7 +188,7 @@
                     ? 'i-heroicons-plus'
                     : 'i-heroicons-pencil-square'
                 "
-                @click="startEditing(row.original.id)"
+                @click="startEditingWithSalaryInput(row.original.id)"
               />
             </template>
           </div>
@@ -250,7 +247,7 @@
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
-import { onMounted } from "vue";
+import { onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useEmployeeStore } from "../stores/useEmployeeStore";
 import type { IEmployeeWithChanges } from "../schemas/employeeSchema";
@@ -279,6 +276,45 @@ const {
 } = store;
 
 // ===== HANDLERS =====
+
+// Функция для расчёта ставки из оклада
+function calculateRateFromSalary(salary: number): number {
+  const hoursPerMonth = 168;
+  return Math.round(salary / hoursPerMonth);
+}
+
+// Следим за изменением newSalaryInput и обновляем newRate/hasChanges
+watch(
+  employees,
+  (list) => {
+    list.forEach(emp => {
+      if (emp.isEditing) {
+        const salary = emp.newSalaryInput || 0;
+        const newRate = calculateRateFromSalary(salary);
+        emp.newRate = newRate;
+        emp.hasChanges = newRate !== emp.rate;
+      }
+    });
+  },
+  { deep: true }
+);
+
+// При подтверждении оклада
+function applySalary(employee: IEmployeeWithChanges & { newSalaryInput?: number }) {
+  // newRate и hasChanges уже обновляются watcher'ом
+  updateEmployeeRate(employee.id, employee.newRate!);
+  applyChange(employee.id);
+}
+
+// Переопределяем startEditing, чтобы инициализировать newSalaryInput
+const originalStartEditing = startEditing;
+function startEditingWithSalaryInput(id: string) {
+  originalStartEditing(id);
+  const emp = employees.value.find(e => e.id === id);
+  if (emp && emp.newSalaryInput === undefined) {
+    emp.newSalaryInput = emp.newRate ? Math.round((emp.newRate || 0) * 168) : 0;
+  }
+}
 
 // Обработчик обновления данных
 async function handleRefresh() {
@@ -399,6 +435,10 @@ function getRowClass(row: { original: IEmployeeWithChanges }) {
 onMounted(async () => {
   try {
     await loadEmployees();
+    // Инициализация временного поля для оклада
+    employees.value.forEach(emp => {
+      emp.newSalaryInput = emp.newRate ? Math.round((emp.newRate || 0) * 168) : 0;
+    });
   } catch (err) {
     console.error('Ошибка при инициализации:', err);
   }

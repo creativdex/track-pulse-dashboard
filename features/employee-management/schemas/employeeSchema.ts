@@ -30,4 +30,5 @@ export interface IEmployeeWithChanges extends IEmployee {
   newRate?: number;
   hasChanges: boolean;
   isEditing: boolean;
+  newSalaryInput?: number; // временное поле для UI
 }
