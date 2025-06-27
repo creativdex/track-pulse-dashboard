@@ -17,12 +17,8 @@ const emit = defineEmits<{
   "load-data": [payload: { from: string | null; to: string | null }];
 }>();
 
-// Период и календарь
-const {
-  startSimple,
-  endSimple,
-  formatDateValue,
-} = useWorkloadPeriod();
+// Период и календарь (теперь один экземпляр на весь View)
+const period = useWorkloadPeriod();
 
 // Выбор задачи и ворклоги
 const { selectedTask, hasWorklogsInTaskTree, handleTaskSelect, clearSelection } = useWorklogSelection();
@@ -39,12 +35,12 @@ watch(
 
 // Функция для загрузки данных по периоду
 const handleLoadData = () => {
-  if (!startSimple.value || !endSimple.value) {
+  if (!period.startSimple.value || !period.endSimple.value) {
     emit("load-data", { from: null, to: null });
     return;
   }
-  const from = `${formatDateValue(startSimple.value)}T00:00:00`;
-  const to = `${formatDateValue(endSimple.value)}T23:59:59`;
+  const from = `${period.formatDateValue(period.startSimple.value)}T00:00:00`;
+  const to = `${period.formatDateValue(period.endSimple.value)}T23:59:59`;
   emit("load-data", { from, to });
 };
 </script>
@@ -57,6 +53,14 @@ const handleLoadData = () => {
     <!-- Панель выбора периода -->
     <WorkloadPeriodPanel
       :loading="loading"
+      :calendar-range="period.calendarRange"
+      :start-simple="period.startSimple"
+      :end-simple="period.endSimple"
+      :format-date-value="period.formatDateValue"
+      :format-date-for-display="period.formatDateForDisplay"
+      :pre-seted-data-range="period.preSetedDataRange"
+      :e-pre-seted-data-range="period.EPreSetedDataRange"
+      @update-calendar="period.handleCalendarUpdate"
       @load-data="handleLoadData"
     />
 

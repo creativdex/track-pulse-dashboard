@@ -114,6 +114,21 @@ export function useWorkloadPeriod() {
     tableStore.savePeriodToStorage();
   };
 
+  // Универсальный обработчик для календаря
+  function handleCalendarUpdate(val: { start?: import('@internationalized/date').DateValue; end?: import('@internationalized/date').DateValue } | null) {
+    const isCalendarDate = (d: unknown): d is CalendarDate => {
+      return !!d && typeof d === 'object' && (d as object).constructor && (d as { constructor: { name: string } }).constructor.name === 'CalendarDate';
+    };
+    if (!val) {
+      calendarRange.value = { start: undefined, end: undefined };
+      return;
+    }
+    calendarRange.value = {
+      start: isCalendarDate(val.start) ? val.start as CalendarDate : undefined,
+      end: isCalendarDate(val.end) ? val.end as CalendarDate : undefined,
+    };
+  }
+
   return {
     startDate,
     endDate,
@@ -124,5 +139,6 @@ export function useWorkloadPeriod() {
     formatDateForDisplay,
     preSetedDataRange,
     EPreSetedDataRange,
+    handleCalendarUpdate,
   };
 }
