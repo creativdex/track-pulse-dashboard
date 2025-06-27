@@ -1,5 +1,6 @@
 import { computed, type Ref } from "vue";
 import type { IWorkloadItem } from "../schemas/workloadSchema";
+import type { StandartColor } from "../types/colors";
 
 export function useWorkloadLookups(
   statuses: Ref<IWorkloadItem[]>,
@@ -63,19 +64,10 @@ export function useWorkloadLookups(
     }
   }
 
-  function getTypeColor(
+  function getStandartTypeColor(
     typeKey: string
-  ):
-    | "neutral"
-    | "primary"
-    | "secondary"
-    | "success"
-    | "info"
-    | "warning"
-    | "error" {
+  ): StandartColor {
     switch (typeKey.toLowerCase()) {
-      case "epic":
-        return "secondary";
       case "story":
       case "feature":
         return "info";
@@ -90,6 +82,26 @@ export function useWorkloadLookups(
       default:
         return "neutral";
     }
+  }
+
+  function getCustomTypeColor(
+    typeKey: string
+  ): string {
+    switch (typeKey.toLowerCase()) {
+      case "epic":
+        return "badge-epic";
+      // Добавьте другие кастомные типы, если нужно
+      default:
+        return "";
+    }
+  }
+
+  function getTypeColor(typeKey: string): { color: StandartColor; customClass: string } {
+    const customClass = getCustomTypeColor(typeKey);
+    if (customClass) {
+      return { color: "neutral", customClass };
+    }
+    return { color: getStandartTypeColor(typeKey), customClass: "" };
   }
 
   return {

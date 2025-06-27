@@ -7,6 +7,9 @@ export const useWorkloadTableStore = defineStore('workloadTable', () => {
   const expandedItems = ref<Set<string>>(new Set());
   const updateTrigger = ref(0);
 
+  // Состояние периода (start/end) для фильтрации задач
+  const period = ref<{ start: string | null; end: string | null }>({ start: null, end: null });
+
   // Геттеры
   const isTaskSelected = computed(() => (key: string) => selectedItemKey.value === key);
   const isItemExpanded = computed(() => (key: string) => expandedItems.value.has(key));
@@ -50,11 +53,34 @@ export const useWorkloadTableStore = defineStore('workloadTable', () => {
     updateTrigger.value++;
   }
 
+  // Сохраняем период в localStorage при изменении
+  function savePeriodToStorage() {
+    if (period.value.start && period.value.end) {
+      localStorage.setItem('workloadPeriod', JSON.stringify(period.value));
+    }
+  }
+
+  // Загружаем период из localStorage
+  function loadPeriodFromStorage() {
+    const raw = localStorage.getItem('workloadPeriod');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed.start && parsed.end) {
+          period.value = parsed;
+        }
+      } catch (e) {
+        console.warn('Ошибка парсинга workloadPeriod из localStorage:', e, raw);
+      }
+    }
+  }
+
   return {
     // Состояние
     selectedItemKey,
     expandedItems,
     updateTrigger,
+    period,
     
     // Геттеры
     isTaskSelected,
@@ -67,5 +93,7 @@ export const useWorkloadTableStore = defineStore('workloadTable', () => {
     initializeExpanded,
     clearSelection,
     clearExpanded,
+    savePeriodToStorage,
+    loadPeriodFromStorage,
   };
 });

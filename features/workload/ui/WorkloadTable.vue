@@ -8,6 +8,10 @@ import {
   useWorkloadTableStore,
 } from "../index";
 import type { TableRowItem } from "../composables/useWorkloadTable";
+import { useWorkloadFormatting } from '../composables/useWorkloadFormatting';
+import ExpandCollapseHeader from './ExpandCollapseHeader.vue';
+import { useExpandCollapse } from '../composables/useExpandCollapse';
+import { useWorkloadRowMeta, WorkloadSpecialType } from '../composables/useWorkloadRowMeta';
 
 const columnsWorkload: TableColumn<TableRowItem>[] = [
   { id: "expand", header: "", accessorKey: "key" },
@@ -47,32 +51,16 @@ const {
   getStatusColor,
   getTypeColor,
 } = lookups;
-const {
-  calculateTotalHours,
-  calculateTotalAmount,
-  formatHours,
-  formatCurrency,
-  hasWorklogsInTree,
-  hierarchyTasks,
-} = tableLogic;
+const { hasWorklogsInTree, hierarchyTasks } = tableLogic;
+const { formatHours, formatCurrency, calculateTotalHours, calculateTotalAmount } = useWorkloadFormatting();
+const { expandAll, collapseAll } = useExpandCollapse(hierarchyTasks, tableStore);
 
 // Инициализируем expand состояние при изменении данных
 watch(
   hierarchyTasks,
   (newHierarchy) => {
-    // Собираем все элементы, которые должны быть развернуты по умолчанию
-    const expandedKeys: string[] = [];
-    function collectExpandedItems(items: TableRowItem[]) {
-      items.forEach((item) => {
-        // Проекты и задачи с детьми разворачиваем по умолчанию
-        if (item.children && item.children.length > 0) {
-          expandedKeys.push(item.key);
-          collectExpandedItems(item.children);
-        }
-      });
-    }
-    collectExpandedItems(newHierarchy);
-    tableStore.initializeExpanded(expandedKeys);
+    // По умолчанию ничего не разворачиваем
+    tableStore.initializeExpanded([]);
   },
   { immediate: true }
 );
@@ -188,6 +176,15 @@ function getRowClass(row: { original: TableRowItem }) {
           @row-click="handleRowClick"
         >
           <!-- Колонка развертывания -->
+          <template #expand-header>
+            <ExpandCollapseHeader
+              :expand-all="expandAll"
+              :collapse-all="collapseAll"
+              :hierarchy-tasks="hierarchyTasks"
+              :expanded-keys="tableStore.expandedItems"
+            />
+          </template>
+
           <template #expand-cell="{ row }">
             <div
               class="flex justify-center"
@@ -210,20 +207,21 @@ function getRowClass(row: { original: TableRowItem }) {
           <!-- Колонка типа -->
           <template #typeKey-cell="{ row }">
             <UBadge
-              v-if="'isProject' in row.original && row.original.isProject"
+              v-if="useWorkloadRowMeta(row.original).specialType === WorkloadSpecialType.Project"
               color="primary"
               variant="solid"
               size="sm"
             >
-              Проект
+              {{ useWorkloadRowMeta(row.original).displayType || getTypeDisplay(row.original.typeKey) }}
             </UBadge>
             <UBadge
               v-else
-              :color="getTypeColor(row.original.typeKey)"
+              :color="getTypeColor(row.original.typeKey).color"
+              :class="[getTypeColor(row.original.typeKey).customClass, useWorkloadRowMeta(row.original).badgeClass]"
               variant="soft"
               size="sm"
             >
-              {{ getTypeDisplay(row.original.typeKey) }}
+              {{ useWorkloadRowMeta(row.original).displayType || getTypeDisplay(row.original.typeKey) }}
             </UBadge>
           </template>
 
@@ -231,23 +229,14 @@ function getRowClass(row: { original: TableRowItem }) {
           <template #summary-cell="{ row }">
             <div class="min-w-0">
               <div class="flex items-center space-x-2">
-                <!-- Для проектов не показываем ключ -->
                 <span
-                  v-if="
-                    !('isProject' in row.original && row.original.isProject)
-                  "
-                  class="font-mono text-xs text-gray-500 flex-shrink-0"
+                  v-if="!useWorkloadRowMeta(row.original).hideKey"
+                  :class="useWorkloadRowMeta(row.original).keyClass"
                 >
                   {{ row.original.key }}
                 </span>
                 <span
-                  :class="{
-                    'font-bold text-lg text-gray-900 dark:text-white truncate':
-                      'isProject' in row.original && row.original.isProject,
-                    'font-medium text-gray-900 dark:text-white truncate': !(
-                      'isProject' in row.original && row.original.isProject
-                    ),
-                  }"
+                  :class="useWorkloadRowMeta(row.original).summaryClass"
                   :title="row.original.summary"
                 >
                   {{ row.original.summary }}
@@ -255,11 +244,11 @@ function getRowClass(row: { original: TableRowItem }) {
               </div>
               <div
                 v-if="
-                  !('isProject' in row.original && row.original.isProject) &&
+                  useWorkloadRowMeta(row.original).specialType !== WorkloadSpecialType.Project &&
                   'description' in row.original &&
                   row.original.description
                 "
-                class="text-sm text-gray-500 truncate"
+                :class="useWorkloadRowMeta(row.original).descriptionClass"
                 :title="row.original.description"
               >
                 {{ row.original.description }}
@@ -269,13 +258,8 @@ function getRowClass(row: { original: TableRowItem }) {
 
           <!-- Колонка часов -->
           <template #hoursSpent-cell="{ row }">
-            <div class="text-right">
-              <span
-                :class="{
-                  'font-bold':
-                    row.original.children && row.original.children.length > 0,
-                }"
-              >
+            <div class="text-right" :class="useWorkloadRowMeta(row.original).hoursSpentClass">
+              <span>
                 {{
                   row.original.children && row.original.children.length > 0
                     ? formatHours(calculateTotalHours(row.original))
@@ -287,13 +271,8 @@ function getRowClass(row: { original: TableRowItem }) {
 
           <!-- Колонка суммы -->
           <template #amount-cell="{ row }">
-            <div class="text-right">
-              <span
-                :class="{
-                  'font-bold':
-                    row.original.children && row.original.children.length > 0,
-                }"
-              >
+            <div class="text-right" :class="useWorkloadRowMeta(row.original).amountClass">
+              <span>
                 {{
                   row.original.children && row.original.children.length > 0
                     ? formatCurrency(calculateTotalAmount(row.original))
@@ -305,7 +284,7 @@ function getRowClass(row: { original: TableRowItem }) {
 
           <!-- Колонка статуса -->
           <template #statusKey-cell="{ row }">
-            <div v-if="'isProject' in row.original && row.original.isProject">
+            <div v-if="useWorkloadRowMeta(row.original).specialType === WorkloadSpecialType.Project" :class="useWorkloadRowMeta(row.original).statusClass">
               —
             </div>
             <UBadge
@@ -313,6 +292,7 @@ function getRowClass(row: { original: TableRowItem }) {
               :color="getStatusColor(row.original.statusKey)"
               variant="soft"
               size="sm"
+              :class="useWorkloadRowMeta(row.original).statusClass"
             >
               {{ getStatusDisplay(row.original.statusKey) }}
             </UBadge>
@@ -320,10 +300,10 @@ function getRowClass(row: { original: TableRowItem }) {
 
           <!-- Колонка ответственного -->
           <template #assigneeId-cell="{ row }">
-            <div class="text-sm">
+            <div class="text-sm" :class="useWorkloadRowMeta(row.original).assigneeClass">
               {{
-                "isProject" in row.original && row.original.isProject
-                  ? "—"
+                useWorkloadRowMeta(row.original).specialType === WorkloadSpecialType.Project
+                  ? '—'
                   : getAssigneeDisplay(row.original.assigneeId)
               }}
             </div>
@@ -331,26 +311,26 @@ function getRowClass(row: { original: TableRowItem }) {
 
           <!-- Колонка дедлайна -->
           <template #deadline-cell="{ row }">
-            <div class="text-sm">
+            <div class="text-sm" :class="useWorkloadRowMeta(row.original).deadlineClass">
               {{
-                "isProject" in row.original && row.original.isProject
-                  ? "—"
+                useWorkloadRowMeta(row.original).specialType === WorkloadSpecialType.Project
+                  ? '—'
                   : row.original.deadline
                   ? row.original.deadline
-                  : "—"
+                  : '—'
               }}
             </div>
           </template>
 
           <!-- Колонка факта -->
           <template #resolvedAt-cell="{ row }">
-            <div class="text-sm">
+            <div class="text-sm" :class="useWorkloadRowMeta(row.original).resolvedAtClass">
               {{
-                "isProject" in row.original && row.original.isProject
-                  ? "—"
+                useWorkloadRowMeta(row.original).specialType === WorkloadSpecialType.Project
+                  ? '—'
                   : row.original.resolvedAt
                   ? row.original.resolvedAt
-                  : "—"
+                  : '—'
               }}
             </div>
           </template>
@@ -359,38 +339,37 @@ function getRowClass(row: { original: TableRowItem }) {
           <template #deltaTime-cell="{ row }">
             <div
               class="text-sm"
-              :class="{
-                'text-red-600':
-                  typeof row.original.deltaTime === 'number' &&
-                  row.original.deltaTime > 0,
-                'text-green-600':
-                  typeof row.original.deltaTime === 'number' &&
-                  row.original.deltaTime < 0,
-              }"
+              :class="[
+                useWorkloadRowMeta(row.original).deltaTimeClass,
+                {
+                  'text-red-600':
+                    typeof row.original.deltaTime === 'number' &&
+                    row.original.deltaTime > 0 &&
+                    useWorkloadRowMeta(row.original).specialType === WorkloadSpecialType.None,
+                  'text-green-600':
+                    typeof row.original.deltaTime === 'number' &&
+                    row.original.deltaTime < 0 &&
+                    useWorkloadRowMeta(row.original).specialType === WorkloadSpecialType.None,
+                }
+              ]"
             >
               {{
-                "isProject" in row.original && row.original.isProject
-                  ? "—"
+                useWorkloadRowMeta(row.original).specialType === WorkloadSpecialType.Project
+                  ? '—'
                   : row.original.deltaTime
                   ? row.original.deltaTime
-                  : "—"
+                  : '—'
               }}
             </div>
           </template>
 
           <!-- Колонка действий -->
           <template #actions-cell="{ row }">
-            <div class="flex justify-end space-x-1">
+            <div class="flex justify-end space-x-1" :class="useWorkloadRowMeta(row.original).actionsClass">
               <UButton
                 v-if="hasWorklogsInTree(row.original)"
-                :variant="
-                  props.selectedTaskKey === row.original.key ? 'solid' : 'ghost'
-                "
-                :color="
-                  props.selectedTaskKey === row.original.key
-                    ? 'primary'
-                    : 'neutral'
-                "
+                :variant="props.selectedTaskKey === row.original.key ? 'solid' : 'ghost'"
+                :color="props.selectedTaskKey === row.original.key ? 'primary' : 'neutral'"
                 size="xs"
                 icon="i-heroicons-clock"
                 @click.stop="handleRowClick(row.original)"
