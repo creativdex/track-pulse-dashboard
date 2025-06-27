@@ -283,7 +283,8 @@ const hoursPerMonth = config.public.workHoursPerMonth;
 
 // Функция для расчёта ставки из оклада
 function calculateRateFromSalary(salary: number): number {
-  return Math.round(salary / hoursPerMonth);
+  // 0.87 — НДФЛ, 1.076 — надбавка 7.6%
+  return Math.round(((salary / 0.87) * 1.076) / hoursPerMonth);
 }
 
 // Следим за изменением newSalaryInput и обновляем newRate/hasChanges
