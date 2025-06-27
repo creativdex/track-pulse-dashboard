@@ -10,8 +10,8 @@
             trailing-icon="i-heroicons-chevron-down"
           >
             {{
-              startSimple && endSimple
-                ? `${formatDateForDisplay(startSimple)} — ${formatDateForDisplay(endSimple)}`
+              props.startSimple.value && props.endSimple.value
+                ? `${props.formatDateForDisplay(props.startSimple.value)} — ${props.formatDateForDisplay(props.endSimple.value)}`
                 : "Выберите период"
             }}
           </UButton>
@@ -24,24 +24,28 @@
                   variant="outline"
                   size="xs"
                   class="flex-1"
-                  @click="preSetedDataRange(EPreSetedDataRange.TODAY)"
+                  @click="handlePreSetedDataRange(props.ePreSetedDataRange.TODAY)"
                 />
                 <UButton
                   label="Неделя"
                   variant="outline"
                   size="xs"
                   class="flex-1"
-                  @click="preSetedDataRange(EPreSetedDataRange.WEEK)"
+                  @click="handlePreSetedDataRange(props.ePreSetedDataRange.WEEK)"
                 />
                 <UButton
                   label="Месяц"
                   variant="outline"
                   size="xs"
                   class="flex-1"
-                  @click="preSetedDataRange(EPreSetedDataRange.MONTH)"
+                  @click="handlePreSetedDataRange(props.ePreSetedDataRange.MONTH)"
                 />
               </div>
-              <UCalendar v-model="calendarRange as any" range />
+              <UCalendar
+                :model-value="props.calendarRange.value"
+                range
+                @update:model-value="handleCalendarUpdate"
+              />
             </div>
           </template>
         </UPopover>
@@ -51,8 +55,8 @@
           color="primary"
           size="sm"
           icon="i-heroicons-arrow-path"
-          :loading="loading"
-          :disabled="!startSimple || !endSimple"
+          :loading="props.loading"
+          :disabled="!props.startSimple.value || !props.endSimple.value"
           @click="handleLoadData"
         >
           Загрузить данные
@@ -63,30 +67,40 @@
 </template>
 
 <script setup lang="ts">
-import { useWorkloadPeriod } from '../composables/useWorkloadPeriod';
+import type { WritableComputedRef, ComputedRef } from 'vue';
+import type { CalendarDate, DateValue } from '@internationalized/date';
+import type { SimpleCalendarDate, EPreSetedDataRange } from '../composables/useWorkloadPeriod';
 
-const { loading } = defineProps<{ loading?: boolean }>();
+const props = defineProps<{
+  loading?: boolean;
+  calendarRange: WritableComputedRef<{ start: CalendarDate | undefined; end: CalendarDate | undefined }>;
+  startSimple: ComputedRef<SimpleCalendarDate | undefined>;
+  endSimple: ComputedRef<SimpleCalendarDate | undefined>;
+  formatDateValue: (date: SimpleCalendarDate) => string;
+  formatDateForDisplay: (date: SimpleCalendarDate) => string;
+  preSetedDataRange: (period: EPreSetedDataRange) => void;
+  ePreSetedDataRange: typeof EPreSetedDataRange;
+}>();
 const emit = defineEmits<{
   (e: 'load-data', payload: { from: string | null; to: string | null }): void;
+  (e: 'update-calendar', val: { start?: DateValue; end?: DateValue } | null): void;
 }>();
 
-const {
-  calendarRange,
-  startSimple,
-  endSimple,
-  formatDateValue,
-  formatDateForDisplay,
-  preSetedDataRange,
-  EPreSetedDataRange,
-} = useWorkloadPeriod();
+function handleCalendarUpdate(val: { start?: DateValue; end?: DateValue } | null) {
+  emit('update-calendar', val);
+}
+
+function handlePreSetedDataRange(period: EPreSetedDataRange) {
+  props.preSetedDataRange(period);
+}
 
 const handleLoadData = () => {
-  if (!startSimple.value || !endSimple.value) {
+  if (!props.startSimple.value || !props.endSimple.value) {
     emit('load-data', { from: null, to: null });
     return;
   }
-  const from = `${formatDateValue(startSimple.value)}T00:00:00`;
-  const to = `${formatDateValue(endSimple.value)}T23:59:59`;
+  const from = `${props.formatDateValue(props.startSimple.value)}T00:00:00`;
+  const to = `${props.formatDateValue(props.endSimple.value)}T23:59:59`;
   emit('load-data', { from, to });
 };
 </script>
