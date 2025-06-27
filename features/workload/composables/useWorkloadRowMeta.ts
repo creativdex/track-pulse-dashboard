@@ -100,7 +100,7 @@ export function useWorkloadRowMeta(item: TableRowItem): WorkloadRowMeta {
     return {
       specialType: WorkloadSpecialType.Epic,
       badgeClass: 'badge-epic',
-      summaryClass: 'font-bold text-lg text-violet-700 dark:text-violet-200 truncate',
+      summaryClass: 'font-bold text-lg text-violet-700 dark:text-violet-200 truncate overflow-hidden whitespace-nowrap text-ellipsis',
       hideKey: false,
       keyClass: 'font-mono text-xs text-violet-700 dark:text-violet-200 flex-shrink-0',
       amountClass: 'font-bold text-violet-700 dark:text-violet-200',

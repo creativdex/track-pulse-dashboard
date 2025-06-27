@@ -65,20 +65,18 @@ watch(
   { immediate: true }
 );
 
-// Функция flatten с учетом состояния стора
-function flattenWithStore(items: TableRowItem[]): TableRowItem[] {
+// Функция flatten с учетом состояния стора и уровня вложенности
+function flattenWithStore(items: TableRowItem[], depth = 0): TableRowItem[] {
   const result: TableRowItem[] = [];
-
-  function addItem(item: TableRowItem) {
-    result.push(item);
-    // Проверяем состояние развертывания из стора (вызываем функцию)
+  function addItem(item: TableRowItem, level: number) {
+    // Spread the original item and add a 'level' property for indentation
+    result.push({ ...item, level });
     const isExpanded = tableStore.isItemExpanded(item.key);
     if (isExpanded && item.children) {
-      item.children.forEach(addItem);
+      item.children.forEach(child => addItem(child, level + 1));
     }
   }
-
-  items.forEach(addItem);
+  items.forEach(item => addItem(item, depth));
   return result;
 }
 
@@ -206,28 +204,33 @@ function getRowClass(row: { original: TableRowItem }) {
 
           <!-- Колонка типа -->
           <template #typeKey-cell="{ row }">
-            <UBadge
-              v-if="useWorkloadRowMeta(row.original).specialType === WorkloadSpecialType.Project"
-              color="primary"
-              variant="solid"
-              size="sm"
-            >
-              {{ useWorkloadRowMeta(row.original).displayType || getTypeDisplay(row.original.typeKey) }}
-            </UBadge>
-            <UBadge
-              v-else
-              :color="getTypeColor(row.original.typeKey).color"
-              :class="[getTypeColor(row.original.typeKey).customClass, useWorkloadRowMeta(row.original).badgeClass]"
-              variant="soft"
-              size="sm"
-            >
-              {{ useWorkloadRowMeta(row.original).displayType || getTypeDisplay(row.original.typeKey) }}
-            </UBadge>
+            <div class="min-w-0 max-w-full overflow-hidden" :style="{ marginLeft: `${(row.original.level || 0) * 20}px` }">
+              <UBadge
+                v-if="useWorkloadRowMeta(row.original).specialType === WorkloadSpecialType.Project"
+                color="primary"
+                variant="solid"
+                size="sm"
+              >
+                {{ useWorkloadRowMeta(row.original).displayType || getTypeDisplay(row.original.typeKey) }}
+              </UBadge>
+              <UBadge
+                v-else
+                :color="getTypeColor(row.original.typeKey).color"
+                :class="[getTypeColor(row.original.typeKey).customClass, useWorkloadRowMeta(row.original).badgeClass]"
+                variant="soft"
+                size="sm"
+              >
+                {{ useWorkloadRowMeta(row.original).displayType || getTypeDisplay(row.original.typeKey) }}
+              </UBadge>
+            </div>
           </template>
 
           <!-- Колонка названия -->
           <template #summary-cell="{ row }">
-            <div class="min-w-0">
+            <div
+              class="min-w-0 max-w-full overflow-hidden"
+              :style="{ marginLeft: `${(row.original.level || 0) * 20}px` }"
+            >
               <div class="flex items-center space-x-2">
                 <span
                   v-if="!useWorkloadRowMeta(row.original).hideKey"
@@ -238,6 +241,7 @@ function getRowClass(row: { original: TableRowItem }) {
                 <span
                   :class="useWorkloadRowMeta(row.original).summaryClass"
                   :title="row.original.summary"
+                  style="max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-block;"
                 >
                   {{ row.original.summary }}
                 </span>
@@ -250,6 +254,7 @@ function getRowClass(row: { original: TableRowItem }) {
                 "
                 :class="useWorkloadRowMeta(row.original).descriptionClass"
                 :title="row.original.description"
+                style="max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block;"
               >
                 {{ row.original.description }}
               </div>
