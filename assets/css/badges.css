@@ -1,0 +1,4 @@
+/* Стиль для эпика: насыщенный фиолетовый, белый текст, лёгкая тень и border */
+.badge-epic {
+  @apply bg-violet-800 text-white shadow-sm border border-violet-800/30 transition px-2 py-0.75 text-shadow-2xs rounded-sm font-medium;
+}
