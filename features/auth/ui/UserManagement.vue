@@ -321,10 +321,10 @@ function getRoleColor(role: string | undefined): "primary" | "secondary" | "succ
   switch (role.toLowerCase()) {
     case 'admin':
       return 'error';
-    case 'manager':
-      return 'primary';
-    case 'user':
+    case 'father':
       return 'success';
+    case 'viewer':
+      return 'secondary';
     default:
       return 'neutral';
   }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { UserManagement, useAuthStore } from '~/features/auth';
+import { EUserRole } from '~/features/auth/enum/roleUserEnum';
 
 // Проверка авторизации и роли администратора
 const authStore = useAuthStore();
@@ -11,7 +12,7 @@ definePageMeta({
 
 // Проверяем, является ли пользователь администратором
 const isAdmin = computed(() => {
-  return authStore.user?.role === 'admin';
+  return authStore.user?.role === EUserRole.ADMIN || authStore.user?.role === EUserRole.FATHER;
 });
 
 // Если не админ, перенаправляем на главную

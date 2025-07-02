@@ -117,9 +117,8 @@ const displayName = computed(() => {
 const roleDisplayName = computed(() => {
   const roles: Record<string, string> = {
     'admin': 'Администратор',
-    'manager': 'Менеджер',
-    'employee': 'Сотрудник',
-    'user': 'Пользователь'
+    'father': 'Батья',
+    'viewer': 'Пользователь',
   };
   return roles[props.user?.role || ''] || props.user?.role || 'Неизвестно';
 });
@@ -127,9 +126,8 @@ const roleDisplayName = computed(() => {
 const roleColor = computed((): 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral' => {
   const colors: Record<string, 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'> = {
     'admin': 'error',
-    'manager': 'warning',
-    'employee': 'primary',
-    'user': 'neutral'
+    'father': 'success',
+    'viewer': 'secondary',
   };
   return colors[props.user?.role || ''] || 'neutral';
 });
@@ -137,9 +135,8 @@ const roleColor = computed((): 'primary' | 'secondary' | 'success' | 'info' | 'w
 const roleIcon = computed(() => {
   const icons: Record<string, string> = {
     'admin': 'i-heroicons-shield-exclamation',
-    'manager': 'i-heroicons-user-group',
-    'employee': 'i-heroicons-briefcase',
-    'user': 'i-heroicons-user'
+    'father': 'i-heroicons-beaker',
+    'viewer': 'i-heroicons-briefcase',
   };
   return icons[props.user?.role || ''] || 'i-heroicons-user';
 });
