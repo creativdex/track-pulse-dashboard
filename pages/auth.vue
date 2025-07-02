@@ -163,4 +163,10 @@ async function submit() {
     isLoading.value = false;
   }
 }
+
+// Мета-данные страницы
+useSeoMeta({
+  title: 'Вход | TrackPulse',
+  description: 'Авторизация в системе TrackPulse для управления задачами и аналитики',
+});
 </script>

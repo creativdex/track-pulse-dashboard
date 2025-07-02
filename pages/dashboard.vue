@@ -57,6 +57,12 @@ const handleLoadData = async (dateRange: { from: string | null; to: string | nul
     isLoading.value = false;
   }
 };
+
+// Мета-данные страницы
+useSeoMeta({
+  title: 'Дашборд | TrackPulse',
+  description: 'Аналитика и управление задачами в TrackPulse',
+});
 </script>
 
 <template>
