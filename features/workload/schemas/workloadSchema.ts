@@ -52,8 +52,16 @@ export const WorkloadQuerySchema = z.object({
     .describe("Queue to filter tasks"),
 });
 
+// Схема для очереди
+export const QueueItemSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  key: z.string(),
+});
+
 export type IWorkloadItem = z.infer<typeof WorkloadItemSchema>;
 export type IWorklogItem = z.infer<typeof WorklogItemSchema>;
 export type IWorkloadTask = z.infer<typeof WorkloadTaskSchema>;
 export type IWorkload = z.infer<typeof WorkloadSchema>;
 export type IWorkloadQuery = z.infer<typeof WorkloadQuerySchema>;
+export type IQueueItem = z.infer<typeof QueueItemSchema>;

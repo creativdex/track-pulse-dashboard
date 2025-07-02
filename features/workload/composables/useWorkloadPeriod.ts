@@ -62,11 +62,10 @@ export function useWorkloadPeriod() {
   });
 
   watch([startDate, endDate], ([start, end]) => {
-    if (start && end) {
-      tableStore.period.start = start.toString();
-      tableStore.period.end = end.toString();
-      tableStore.savePeriodToStorage();
-    }
+    // Сохраняем период даже если только одна дата выбрана
+    tableStore.period.start = start?.toString() || '';
+    tableStore.period.end = end?.toString() || '';
+    tableStore.savePeriodToStorage();
   });
 
   const startSimple = computed(() => toSimpleCalendarDate(startDate.value));
@@ -116,17 +115,23 @@ export function useWorkloadPeriod() {
 
   // Универсальный обработчик для календаря
   function handleCalendarUpdate(val: { start?: import('@internationalized/date').DateValue; end?: import('@internationalized/date').DateValue } | null) {
-    const isCalendarDate = (d: unknown): d is CalendarDate => {
-      return !!d && typeof d === 'object' && (d as object).constructor && (d as { constructor: { name: string } }).constructor.name === 'CalendarDate';
-    };
     if (!val) {
-      calendarRange.value = { start: undefined, end: undefined };
+      startDate.value = undefined;
+      endDate.value = undefined;
       return;
     }
-    calendarRange.value = {
-      start: isCalendarDate(val.start) ? val.start as CalendarDate : undefined,
-      end: isCalendarDate(val.end) ? val.end as CalendarDate : undefined,
+    
+    // Более простая проверка - проверяем наличие нужных свойств
+    const isValidDate = (d: unknown): d is CalendarDate => {
+      return !!d && typeof d === 'object' && 'year' in d && 'month' in d && 'day' in d;
     };
+    
+    // Обновляем startDate и endDate напрямую, чтобы сработал watcher
+    const newStart = isValidDate(val.start) ? val.start as CalendarDate : undefined;
+    const newEnd = isValidDate(val.end) ? val.end as CalendarDate : undefined;
+    
+    startDate.value = newStart;
+    endDate.value = newEnd;
   }
 
   return {
