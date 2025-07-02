@@ -16,7 +16,7 @@ const workloadData = ref<IWorkload>({
 });
 
 // Функция загрузки данных за выбранный период
-const handleLoadData = async (dateRange: { from: string | null; to: string | null }) => {
+const handleLoadData = async (dateRange: { from: string | null; to: string | null; queue?: string }) => {
   console.log('Загрузка данных за период:', dateRange);
   
   isLoading.value = true;
@@ -26,6 +26,7 @@ const handleLoadData = async (dateRange: { from: string | null; to: string | nul
     const data = await fetchWorkloadData({
       from: dateRange.from || undefined,
       to: dateRange.to || undefined,
+      queue: dateRange.queue || undefined,
     });
     
     workloadData.value = data;
@@ -36,7 +37,7 @@ const handleLoadData = async (dateRange: { from: string | null; to: string | nul
     const toast = useToast();
     toast.add({
       title: 'Данные загружены',
-      description: `Период: ${dateRange.from || 'не указано'} - ${dateRange.to || 'не указано'}`,
+      description: `Период: ${dateRange.from || 'не указано'} - ${dateRange.to || 'не указано'}${dateRange.queue ? `, очередь: ${dateRange.queue}` : ''}`,
       icon: 'i-heroicons-check-circle',
       color: 'success'
     });

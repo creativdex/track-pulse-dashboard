@@ -14,7 +14,7 @@ const props = defineProps<{
   loading?: boolean;
 }>();
 const emit = defineEmits<{
-  "load-data": [payload: { from: string | null; to: string | null }];
+  "load-data": [payload: { from: string | null; to: string | null; queue?: string }];
 }>();
 
 // Период и календарь (теперь один экземпляр на весь View)
@@ -34,14 +34,8 @@ watch(
 );
 
 // Функция для загрузки данных по периоду
-const handleLoadData = () => {
-  if (!period.startSimple.value || !period.endSimple.value) {
-    emit("load-data", { from: null, to: null });
-    return;
-  }
-  const from = `${period.formatDateValue(period.startSimple.value)}T00:00:00`;
-  const to = `${period.formatDateValue(period.endSimple.value)}T23:59:59`;
-  emit("load-data", { from, to });
+const handleLoadData = (payload: { from: string | null; to: string | null; queue?: string }) => {
+  emit("load-data", payload);
 };
 </script>
 

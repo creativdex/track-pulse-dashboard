@@ -69,6 +69,7 @@
 </template>
 
 <script setup lang="ts">
+import { EUserRole } from "~/features/auth/enum/roleUserEnum";
 import { useAuthStore } from "~/features/auth/stores/useAuthStore";
 
 // Используем интерфейс IProfileUser для профиля
@@ -140,7 +141,7 @@ const userMenuItems = computed(() => {
   ];
 
   // Добавляем админские пункты для администраторов
-  if (auth.user?.role === 'admin') {
+  if (auth.user?.role === EUserRole.ADMIN || auth.user?.role === EUserRole.FATHER) {
     baseItems.push([
       {
         label: "Управление сотрудниками",

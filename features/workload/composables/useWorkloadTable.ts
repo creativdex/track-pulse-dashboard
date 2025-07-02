@@ -195,26 +195,25 @@ export function useWorkloadTable(
     return false;
   }
 
-  // Форматирование часов
+  // Форматирование часов в формат ЧЧ:ММ
   function formatHours(hours: number | null): string {
     if (!hours) return "—";
 
-    // Округляем до 1 знака после запятой
-    const roundedHours = Math.round(hours * 10) / 10;
-
-    const lastDigit = Math.floor(roundedHours) % 10;
-    const lastTwoDigits = Math.floor(roundedHours) % 100;
-
-    if (lastDigit === 1 && lastTwoDigits !== 11) {
-      return `${roundedHours} час`;
-    } else if (
-      [2, 3, 4].includes(lastDigit) &&
-      ![12, 13, 14].includes(lastTwoDigits)
-    ) {
-      return `${roundedHours} часа`;
-    } else {
-      return `${roundedHours} часов`;
-    }
+    const isNegative = hours < 0;
+    const absHours = Math.abs(hours);
+    
+    const wholeHours = Math.floor(absHours);
+    const minutes = Math.round((absHours - wholeHours) * 60);
+    
+    // Если минуты равны 60, добавляем час и обнуляем минуты
+    const finalHours = minutes === 60 ? wholeHours + 1 : wholeHours;
+    const finalMinutes = minutes === 60 ? 0 : minutes;
+    
+    const sign = isNegative ? '-' : '';
+    const hoursStr = finalHours.toString().padStart(2, '0');
+    const minutesStr = finalMinutes.toString().padStart(2, '0');
+    
+    return `${sign}${hoursStr}:${minutesStr}`;
   }
 
   // Форматирование суммы

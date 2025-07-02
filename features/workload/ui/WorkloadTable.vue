@@ -8,7 +8,6 @@ import {
   useWorkloadTableStore,
 } from "../index";
 import type { TableRowItem } from "../composables/useWorkloadTable";
-import { useWorkloadFormatting } from '../composables/useWorkloadFormatting';
 import ExpandCollapseHeader from './ExpandCollapseHeader.vue';
 import { useExpandCollapse } from '../composables/useExpandCollapse';
 import { useWorkloadRowMeta, WorkloadSpecialType } from '../composables/useWorkloadRowMeta';
@@ -51,8 +50,7 @@ const {
   getStatusColor,
   getTypeColor,
 } = lookups;
-const { hasWorklogsInTree, hierarchyTasks } = tableLogic;
-const { formatHours, formatCurrency, calculateTotalHours, calculateTotalAmount } = useWorkloadFormatting();
+const { hasWorklogsInTree, hierarchyTasks, formatHours, formatCurrency, calculateTotalHours, calculateTotalAmount } = tableLogic;
 const { expandAll, collapseAll } = useExpandCollapse(hierarchyTasks, tableStore);
 
 // Инициализируем expand состояние при изменении данных
@@ -361,8 +359,8 @@ function getRowClass(row: { original: TableRowItem }) {
               {{
                 useWorkloadRowMeta(row.original).specialType === WorkloadSpecialType.Project
                   ? '—'
-                  : row.original.deltaTime
-                  ? row.original.deltaTime
+                  : typeof row.original.deltaTime === 'number'
+                  ? formatHours(row.original.deltaTime)
                   : '—'
               }}
             </div>

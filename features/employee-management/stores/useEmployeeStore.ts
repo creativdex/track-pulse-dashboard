@@ -1,9 +1,17 @@
 import { defineStore } from "pinia";
 import type {
-  ISalaryChange,
   IEmployeeWithChanges,
+  ITrackerProject,
+  ITrackerQueue,
 } from "../schemas/employeeSchema";
-import { getEmployees, updateSalaries } from "../api/client";
+import { EUserTrackerRateType } from "../schemas/employeeSchema";
+import {
+  getEmployees,
+  getEmployeesByRateType,
+  updateRatesWithTypes,
+  getProjects,
+  getQueues,
+} from "../api/client";
 
 export const useEmployeeStore = defineStore("employee", () => {
   // State
@@ -11,6 +19,11 @@ export const useEmployeeStore = defineStore("employee", () => {
   const loading = ref(false);
   const saving = ref(false);
   const error = ref<string | null>(null);
+
+  // Новые справочники для типов ставок
+  const projects = ref<ITrackerProject[]>([]);
+  const queues = ref<ITrackerQueue[]>([]);
+  const loadingLookups = ref(false);
 
   // Computed
   const employeesWithChanges = computed(() =>
@@ -56,13 +69,66 @@ export const useEmployeeStore = defineStore("employee", () => {
         newRate: undefined,
         hasChanges: false,
         isEditing: false,
+        newSalaryInput: undefined,
+        newDirectRate: undefined,
       }));
     } catch (err) {
       error.value =
         err instanceof Error ? err.message : "Ошибка загрузки сотрудников";
-      console.error("Ошибка загрузки сотрудников:", err);
     } finally {
       loading.value = false;
+    }
+  }
+
+  // Загрузка сотрудников по типу ставки
+  async function loadEmployeesByRateType(
+    rateType: EUserTrackerRateType,
+    context?: string,
+    includeAll = false
+  ) {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const data = await getEmployeesByRateType(rateType, context, includeAll);
+
+      employees.value = data.map((emp) => ({
+        ...emp,
+        rate:
+          emp.rate !== null && emp.rate !== undefined ? Number(emp.rate) : null,
+        newRate: undefined,
+        hasChanges: false,
+        isEditing: false,
+        newSalaryInput: undefined,
+        newDirectRate: undefined,
+      }));
+    } catch (err) {
+      error.value =
+        err instanceof Error ? err.message : "Ошибка загрузки сотрудников по типу ставки";
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // Новые методы для загрузки справочников
+  async function loadLookups() {
+    loadingLookups.value = true;
+    error.value = null;
+
+    try {
+      const [projectsData, queuesData] = await Promise.all([
+        getProjects(),
+        getQueues(),
+      ]);
+
+      projects.value = projectsData;
+      queues.value = queuesData;
+    } catch (err) {
+      error.value =
+        err instanceof Error ? err.message : "Ошибка загрузки справочников";
+      console.error("Ошибка загрузки справочников:", err);
+    } finally {
+      loadingLookups.value = false;
     }
   }
 
@@ -100,29 +166,33 @@ export const useEmployeeStore = defineStore("employee", () => {
     }
   }
 
-  async function saveAllChanges() {
-    if (!hasUnsavedChanges.value) return;
+  async function saveAllChanges(rateType: EUserTrackerRateType = EUserTrackerRateType.GLOBAL, contextValue?: string): Promise<{ success: boolean; updated: number }> {
+    if (!hasUnsavedChanges.value) return { success: true, updated: 0 };
 
     saving.value = true;
     error.value = null;
 
     try {
-      const changes: ISalaryChange[] = employeesWithChanges.value.map(
-        (emp) => ({
-          employeeId: emp.id,
-          newRate: emp.newRate!,
-          comment:
-            emp.rate === null
-              ? "Установка первоначального оклада"
-              : "Изменение оклада",
-        })
-      );
+      const employeesWithChanges = employees.value.filter(emp => emp.hasChanges);
+      
+      if (employeesWithChanges.length === 0) {
+        return { success: true, updated: 0 };
+      }
 
-      const result = await updateSalaries({ changes });
+      // Формируем массив изменений для нового API
+      const changes = employeesWithChanges.map(emp => ({
+        userId: emp.id,
+        rate: emp.newRate!,
+        comment: emp.rate === null
+          ? "Установка первоначальной ставки"
+          : "Изменение ставки",
+      }));
+
+      const result = await updateRatesWithTypes(changes, rateType, contextValue);
 
       if (result.success) {
         // Применяем изменения к локальным данным
-        employeesWithChanges.value.forEach((emp) => {
+        employeesWithChanges.forEach((emp) => {
           emp.rate = emp.newRate!;
           emp.newRate = undefined;
           emp.hasChanges = false;
@@ -130,11 +200,14 @@ export const useEmployeeStore = defineStore("employee", () => {
         });
 
         // Статистика обновится автоматически через computed
+        return result; // Возвращаем результат с количеством обновленных записей
+      } else {
+        throw new Error('Сохранение не удалось');
       }
     } catch (err) {
       error.value =
         err instanceof Error ? err.message : "Ошибка сохранения изменений";
-      console.error("Ошибка сохранения изменений:", err);
+      throw err; // Пробрасываем ошибку дальше
     } finally {
       saving.value = false;
     }
@@ -170,6 +243,9 @@ export const useEmployeeStore = defineStore("employee", () => {
     saving: readonly(saving),
     error: readonly(error),
     stats: readonly(stats),
+    projects,
+    queues,
+    loadingLookups: readonly(loadingLookups),
 
     // Computed
     employeesWithChanges: readonly(employeesWithChanges),
@@ -178,6 +254,8 @@ export const useEmployeeStore = defineStore("employee", () => {
 
     // Actions
     loadEmployees,
+    loadEmployeesByRateType,
+    loadLookups,
     startEditing,
     cancelEditing,
     updateEmployeeRate,
