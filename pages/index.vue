@@ -23,7 +23,7 @@ onMounted(async () => {
     
     // Перенаправляем на соответствующую страницу
     if (authStore.isAuthenticated) {
-      navigateTo('/dashboard');
+      navigateTo('/dashboard-extended');
     } else {
       navigateTo('/auth');
     }

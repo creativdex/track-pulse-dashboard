@@ -3,7 +3,7 @@
     <!-- Хлебные крошки -->
     <UBreadcrumb
       :links="[
-        { label: 'Главная', to: '/dashboard' },
+        { label: 'Главная', to: '/dashboard-extended' },
         { label: 'Профиль', to: '/profile' }
       ]"
       class="mb-6"

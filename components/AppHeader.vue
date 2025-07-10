@@ -3,7 +3,7 @@
     <div class="container mx-auto px-4 flex justify-between items-center">
       <!-- Логотип и название -->
       <div class="flex items-center">
-        <NuxtLink to="/dashboard" class="flex items-center space-x-2">
+        <NuxtLink to="/dashboard-extended" class="flex items-center space-x-2">
           <UIcon
             name="i-heroicons-chart-bar"
             class="text-primary-500 text-2xl"

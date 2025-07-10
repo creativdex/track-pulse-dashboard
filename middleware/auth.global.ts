@@ -17,7 +17,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (authStore.isAuthenticated) {
     // Пользователь авторизован, но пытается зайти на страницу авторизации
     if (isAuthPage) {
-      return navigateTo('/dashboard');
+      return navigateTo('/dashboard-extended');
     }
   } else {
     // Пользователь не авторизован, но пытается зайти на защищенную страницу

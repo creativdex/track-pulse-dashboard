@@ -1,11 +1,7 @@
 <template>
   <div class="px-4">
     <div class="header mb-6 mt-6">
-      <div class="mb-4">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-          Сводка по трекеру
-        </h1>
-      </div>
+
 
       <!-- Загрузка -->
       <div v-if="loading" class="space-y-6">

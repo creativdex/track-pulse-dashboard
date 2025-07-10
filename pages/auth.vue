@@ -141,7 +141,7 @@ async function submit() {
       });
 
       setTimeout(() => {
-        navigateTo("/dashboard");
+        navigateTo("/dashboard-extended");
       }, 1000);
     } else {
       formError.value = "Ошибка авторизации";
